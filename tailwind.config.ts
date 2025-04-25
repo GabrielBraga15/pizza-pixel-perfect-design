@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				pizza: {
+					'primary': '#D72C16',
+					'secondary': '#F5CB5C',
+					'accent': '#8E3200',
+					'dark': '#242423',
+					'light': '#F8F7F4',
 				}
+			},
+			fontFamily: {
+				'serif': ['Playfair Display', 'serif'],
+				'sans': ['Roboto', 'sans-serif'],
+				'cursive': ['Dancing Script', 'cursive']
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -89,6 +102,10 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			backgroundImage: {
+				'pizza-pattern': "url('/pizza-pattern.png')",
+				'wood-texture': "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/wood-texture.jpg')"
 			}
 		}
 	},
