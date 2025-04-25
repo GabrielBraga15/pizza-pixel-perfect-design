@@ -1,14 +1,30 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Plus, Minus, ShoppingCart } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const Cart = () => {
   const { items, updateQuantity, removeItem, total } = useCart();
+
+  const finalizarPedido = () => {
+    const numero = "5531999999999"; // Substitua pelo número da pizzaria (DDI + DDD + número)
+    const mensagem = encodeURIComponent(
+      `Olá! Gostaria de fazer um pedido:\n\n${items
+        .map(
+          (item) =>
+            `- ${item.quantity}x ${item.name} (R$${(
+              item.price * item.quantity
+            ).toFixed(2)})`
+        )
+        .join("\n")}\n\nTotal: R$${total.toFixed(2)}`
+    );
+
+    const link = `https://wa.me/${numero}?text=${mensagem}`;
+    window.open(link, "_blank");
+  };
 
   if (items.length === 0) {
     return (
@@ -17,7 +33,9 @@ const Cart = () => {
         <div className="container mx-auto px-4 py-16 text-center">
           <ShoppingCart className="mx-auto mb-4 text-gray-400" size={48} />
           <h1 className="text-2xl font-bold mb-4">Seu carrinho está vazio</h1>
-          <p className="text-gray-600 mb-8">Adicione algumas pizzas deliciosas ao seu carrinho!</p>
+          <p className="text-gray-600 mb-8">
+            Adicione algumas pizzas deliciosas ao seu carrinho!
+          </p>
           <Link to="/menu">
             <Button className="bg-pizza-primary hover:bg-pizza-accent">
               Ver Cardápio
@@ -34,10 +52,13 @@ const Cart = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-3xl font-bold mb-8">Seu Carrinho</h1>
-        
+
         <div className="grid gap-8">
           {items.map((item) => (
-            <div key={item.id} className="bg-white p-6 rounded-lg shadow-md flex items-center gap-6">
+            <div
+              key={item.id}
+              className="bg-white p-6 rounded-lg shadow-md flex items-center gap-6"
+            >
               <img
                 src={item.image_url}
                 alt={item.name}
@@ -66,10 +87,7 @@ const Cart = () => {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <Button
-                variant="destructive"
-                onClick={() => removeItem(item.id)}
-              >
+              <Button variant="destructive" onClick={() => removeItem(item.id)}>
                 Remover
               </Button>
             </div>
@@ -83,9 +101,17 @@ const Cart = () => {
               R${total.toFixed(2)}
             </span>
           </div>
-          <Button className="w-full bg-pizza-primary hover:bg-pizza-accent text-lg py-6">
-            Finalizar Pedido
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button className="w-full bg-white text-pizza-primary border border-pizza-primary hover:text-white hover:bg-pizza-accent text-lg py-6">
+              Adicionar mais itens ao pedido
+            </Button>
+            <Button
+              className="w-full bg-pizza-primary hover:bg-pizza-accent text-lg py-6"
+              onClick={finalizarPedido}
+            >
+              Finalizar Pedido
+            </Button>
+          </div>
         </div>
       </div>
       <Footer />
