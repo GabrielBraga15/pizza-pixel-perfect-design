@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
@@ -78,9 +79,11 @@ const FeaturedMenu: React.FC = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Button className="btn-pizza-outline">
-            Ver Cardápio Completo
-          </Button>
+          <Link to="/menu">
+            <Button className="btn-pizza-outline">
+              Ver Cardápio Completo
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
