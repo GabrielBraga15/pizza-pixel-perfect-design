@@ -5,6 +5,9 @@ import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
+
+
 
 const Cart = () => {
   const { items, updateQuantity, removeItem, total } = useCart();
@@ -25,6 +28,31 @@ const Cart = () => {
     const link = `https://wa.me/${numero}?text=${mensagem}`;
     window.open(link, "_blank");
   };
+
+  const enviarPedido = async () => {
+    const { error } = await supabase
+      .from("orders")
+      .insert([
+        {
+          itens: items,
+          total: total,
+          status: "novo",
+        },
+      ]);
+  
+    if (error) {
+      alert("Erro ao salvar pedido: " + error.message);
+      return;
+    }
+  
+    finalizarPedido();
+  };
+  
+  
+    
+  
+ 
+  
 
   if (items.length === 0) {
     return (
@@ -106,11 +134,12 @@ const Cart = () => {
               Adicionar mais itens ao pedido
             </Button>
             <Button
-              className="w-full bg-pizza-primary hover:bg-pizza-accent text-lg py-6"
-              onClick={finalizarPedido}
-            >
-              Finalizar Pedido
-            </Button>
+  className="w-full bg-pizza-primary hover:bg-pizza-accent text-lg py-6"
+  onClick={enviarPedido}
+>
+  Finalizar Pedido
+</Button>
+
           </div>
         </div>
       </div>
