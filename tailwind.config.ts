@@ -97,11 +97,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'slide-out-to-bottom-full': {
+					'0%': { transform: 'translateY(0%)', opacity: '1' },
+					'100%': { transform: 'translateY(100%)', opacity: '0' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'slide-out-to-bottom-full': 'slide-out-to-bottom-full 0.3s ease-in forwards'
 			},
 			backgroundImage: {
 				'pizza-pattern': "url('/pizza-pattern.png')",

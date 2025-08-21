@@ -57,7 +57,7 @@ const Cart = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-white p-6 rounded-lg shadow-md flex items-center gap-6"
+              className="bg-white p-6 rounded-lg shadow-md flex items-center gap-4"
             >
               <img
                 src={item.image_url}
@@ -70,7 +70,8 @@ const Cart = () => {
                   R${(item.price * item.quantity).toFixed(2)}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex items-center gap-3 w-20 sm:w-auto">
                 <Button
                   variant="outline"
                   size="icon"
@@ -87,9 +88,10 @@ const Cart = () => {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <Button variant="destructive" onClick={() => removeItem(item.id)}>
+              <Button className="w-20 sm:w-auto" variant="destructive" onClick={() => removeItem(item.id)}>
                 Remover
               </Button>
+            </div>
             </div>
           ))}
         </div>
@@ -102,9 +104,11 @@ const Cart = () => {
             </span>
           </div>
           <div className="flex flex-col gap-2">
+            <Link to={"/menu"}>
             <Button className="w-full bg-white text-pizza-primary border border-pizza-primary hover:text-white hover:bg-pizza-accent text-lg py-6">
               Adicionar mais itens ao pedido
             </Button>
+            </Link>
             <Button
               className="w-full bg-pizza-primary hover:bg-pizza-accent text-lg py-6"
               onClick={finalizarPedido}
