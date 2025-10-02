@@ -5,25 +5,52 @@ import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 
 const Cart = () => {
-  const { items, updateQuantity, removeItem, total } = useCart();
+  const { items, updateQuantity, removeItem, total, clearCart } = useCart(); // 🔹 pega clearCart
 
-  const finalizarPedido = () => {
-    const numero = "5531999999999"; // Substitua pelo número da pizzaria (DDI + DDD + número)
-    const mensagem = encodeURIComponent(
-      `Olá! Gostaria de fazer um pedido:\n\n${items
-        .map(
-          (item) =>
-            `- ${item.quantity}x ${item.name} (R$${(
-              item.price * item.quantity
-            ).toFixed(2)})`
-        )
-        .join("\n")}\n\nTotal: R$${total.toFixed(2)}`
+  const finalizarPedido = async () => {
+    if (items.length === 0) return alert("Carrinho vazio!");
+
+    const totalPedido = items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0
     );
 
-    const link = `https://wa.me/${numero}?text=${mensagem}`;
-    window.open(link, "_blank");
+    // 1️⃣ Inserir no Supabase
+    const { data, error } = await supabase
+      .from("orders")
+      .insert([
+        {
+          customer_name: "Cliente sem login", // temporário
+          items: items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          total: totalPedido,
+          status: "pendente",
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao criar pedido:", error);
+      return alert("Erro ao enviar pedido. Tente novamente.");
+    }
+
+    // 2️⃣ Mensagem de confirmação local
+    alert(
+      `Pedido recebido! Total: R$${totalPedido.toFixed(
+        2
+      )}. Estamos preparando seu pedido.`
+    );
+
+    // 3️⃣ Limpar carrinho usando o contexto
+    clearCart(); // ✅ chama a função do CartContext
   };
 
   if (items.length === 0) {
@@ -71,27 +98,31 @@ const Cart = () => {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex items-center gap-3 w-20 sm:w-auto">
+                <div className="flex items-center gap-3 w-20 sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-8 text-center">{item.quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
                 <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                  className="w-20 sm:w-auto"
+                  variant="destructive"
+                  onClick={() => removeItem(item.id)}
                 >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-8 text-center">{item.quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                >
-                  <Plus className="h-4 w-4" />
+                  Remover
                 </Button>
               </div>
-              <Button className="w-20 sm:w-auto" variant="destructive" onClick={() => removeItem(item.id)}>
-                Remover
-              </Button>
-            </div>
             </div>
           ))}
         </div>
@@ -105,9 +136,9 @@ const Cart = () => {
           </div>
           <div className="flex flex-col gap-2">
             <Link to={"/menu"}>
-            <Button className="w-full bg-white text-pizza-primary border border-pizza-primary hover:text-white hover:bg-pizza-accent text-lg py-6">
-              Adicionar mais itens ao pedido
-            </Button>
+              <Button className="w-full bg-white text-pizza-primary border border-pizza-primary hover:text-white hover:bg-pizza-accent text-lg py-6">
+                Adicionar mais itens ao pedido
+              </Button>
             </Link>
             <Button
               className="w-full bg-pizza-primary hover:bg-pizza-accent text-lg py-6"

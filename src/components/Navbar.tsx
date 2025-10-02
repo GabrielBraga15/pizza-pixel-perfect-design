@@ -14,11 +14,11 @@ const Navbar: React.FC = () => {
       <div className="container px-4 mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
-          <a href="/" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <span className="text-2xl font-cursive font-bold text-pizza-primary">
               Pizzaria Delícia
             </span>
-          </a>
+          </Link>
         </div>
 
         {/* Se for a página /menu, mostra só o botão do pedido online */}

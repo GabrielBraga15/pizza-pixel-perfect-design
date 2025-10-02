@@ -25,6 +25,7 @@ export default function Admin() {
   const [editedItems, setEditedItems] = useState<
     Record<string, Partial<MenuItem>>
   >({});
+  const [uploading, setUploading] = useState(false);
 
   // Busca inicial
   useEffect(() => {
@@ -36,7 +37,13 @@ export default function Admin() {
 
       const { data, error } = await supabase.from("menu_items").select("*");
       if (error) console.error(error);
-      else setItems(data || []);
+      else
+        setItems(
+          ((data || []) as Partial<MenuItem>[]).map((item) => ({
+            ...item,
+            is_active: (item as MenuItem).is_active ?? true, // fallback if missing
+          })) as MenuItem[]
+        );
       setLoading(false);
     })();
   }, [navigate]);
@@ -48,7 +55,11 @@ export default function Admin() {
   };
 
   // Alterar valores só localmente
-  const handleLocalChange = (id: string, field: keyof MenuItem, value: any) => {
+  const handleLocalChange = (
+    id: string,
+    field: keyof MenuItem,
+    value: string | number | boolean | null
+  ) => {
     setEditedItems((prev) => ({
       ...prev,
       [id]: {
@@ -67,6 +78,7 @@ export default function Admin() {
       .from("menu_items")
       .update(changes)
       .eq("id", id);
+
     if (!error) {
       setItems((prev) =>
         prev.map((i) => (i.id === id ? { ...i, ...changes } : i))
@@ -81,14 +93,19 @@ export default function Admin() {
     }
   };
 
+  // Criar novo item
   const createItem = async () => {
+    if (!newItem.name) return alert("O nome é obrigatório!");
+    if (!newItem.image_url) return alert("Faça o upload da imagem primeiro!");
+
     const payload = {
-      name: newItem.name || "",
+      name: newItem.name,
       description: newItem.description || null,
       price: newItem.price ?? 0,
-      image_url: newItem.image_url || "", // 👈 já vem pronto do handleImageUpload
+      image_url: newItem.image_url,
       category: newItem.category || "geral",
       is_featured: newItem.is_featured ?? false,
+      is_active: true, // Explicitly set is_active
     };
 
     const { data, error } = await supabase
@@ -97,41 +114,103 @@ export default function Admin() {
       .select()
       .single();
 
-    if (error) {
-      console.error("Erro ao criar item:", error.message, error.details);
-    } else if (data) {
-      setItems((prev) => [...prev, data]);
-      setNewItem({});
+    if (error) return console.error("Erro ao criar item:", error);
+
+    setItems((prev) => [...prev, { ...data, is_active: true } as MenuItem]);
+    setNewItem({});
+  };
+
+  // Upload de imagem para novo item
+  // Upload de imagem para novo item (versão correta)
+  const handleImageUploadNewItem = async (file: File) => {
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "menu_upload"); // configurado no Cloudinary
+
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dvysyna0q/image/upload", // troque "meuapp123" pelo seu cloud_name
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.secure_url) {
+        console.log("Imagem URL:", data.secure_url);
+
+        // Só seta no estado do novo item, não insere ainda no banco
+        setNewItem((prev) => ({ ...prev, image_url: data.secure_url }));
+      }
+    } catch (error) {
+      console.error("Erro no upload:", error);
+    } finally {
+      setUploading(false);
     }
   };
 
-  // Upload de imagem para o Storage
-  const handleImageUpload = async (file: File, itemId?: string) => {
-    const filePath = `${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage
-      .from("menu-images") // 👈 CONFIRMAR se é exatamente esse nome no seu Supabase
-      .upload(filePath, file);
+  // Upload de imagem para item existente
+  // Upload de imagem para item existente (usando Cloudinary também)
+  const handleImageUploadExistingItem = async (file: File, itemId: string) => {
+    try {
+      setUploading(true);
 
-    if (error) return console.error(error);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "menu_upload"); // mesmo preset do novo item
 
-    const { data: publicUrl } = supabase.storage
-      .from("menu-images")
-      .getPublicUrl(filePath);
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dvysyna0q/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-    if (itemId) {
-      handleLocalChange(itemId, "image_url", publicUrl.publicUrl);
-    } else {
-      setNewItem((prev) => ({ ...prev, image_url: publicUrl.publicUrl }));
+      const data = await res.json();
+
+      if (data.secure_url) {
+        console.log("Imagem URL:", data.secure_url);
+
+        // Atualiza localmente
+        handleLocalChange(itemId, "image_url", data.secure_url);
+
+        // Atualiza no banco imediatamente
+        const { error: updateError } = await supabase
+          .from("menu_items")
+          .update({ image_url: data.secure_url })
+          .eq("id", itemId);
+
+        if (updateError) console.error(updateError);
+      }
+    } catch (error) {
+      console.error("Erro no upload existente:", error);
+    } finally {
+      setUploading(false);
     }
   };
 
   if (loading) return <p className="p-6">Carregando...</p>;
 
   return (
-    <div className="p-6 space-y-8 ">
-      <h1 className="sm:text-5xl text-3xl font-bold text-center font-sans">
-        PAINEL ADMINISTRATIVO
-      </h1>
+    <div className="p-6 space-y-8">
+      <div className="sm:flex-row flex-col flex justify-between items-center">
+        <h1 className="sm:text-5xl sm:pb-0 pb-5 text-3xl font-bold text-center font-sans flex-1">
+          PAINEL ADMINISTRATIVO
+        </h1>
+
+        {/* Botão para a cozinha */}
+        <Button
+          onClick={() => navigate("/cozinha")}
+          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded ml-0 sm:ml-4"
+        >
+          👨‍🍳 Ir para a Cozinha
+        </Button>
+      </div>
 
       {/* Novo item */}
       <div className="border p-4 rounded-sm space-y-4">
@@ -152,7 +231,6 @@ export default function Admin() {
             setNewItem((prev) => ({ ...prev, description: e.target.value }))
           }
         />
-
         <input
           className="border p-2 w-full"
           placeholder="Preço"
@@ -165,13 +243,13 @@ export default function Admin() {
             }))
           }
         />
-        <div className="sm:flex  gap-10 flex-col">
+        <div className="sm:flex gap-10 flex-col">
           <input
             className="w-48 sm:w-auto"
             type="file"
             accept="image/*"
             onChange={(e) =>
-              e.target.files && handleImageUpload(e.target.files[0])
+              e.target.files && handleImageUploadNewItem(e.target.files[0])
             }
           />
           {newItem.image_url && (
@@ -184,8 +262,9 @@ export default function Admin() {
           <button
             className="bg-green-500 font-bold max-w-48 hover:bg-green-700 transition-all text-white mt-4 sm:mt-0 px-4 py-2 rounded"
             onClick={createItem}
+            disabled={uploading || !newItem.image_url} // 🔹 desabilita enquanto o upload está acontecendo
           >
-            Salvar novo item
+            {uploading ? "Enviando imagem..." : "Salvar novo item"}
           </button>
         </div>
       </div>
@@ -214,7 +293,7 @@ export default function Admin() {
                     className="hidden"
                     onChange={(e) =>
                       e.target.files &&
-                      handleImageUpload(e.target.files[0], item.id)
+                      handleImageUploadExistingItem(e.target.files[0], item.id)
                     }
                   />
                   <Edit className="w-4 h-4 text-gray-600" />
@@ -222,7 +301,6 @@ export default function Admin() {
               </div>
 
               <CardContent className="p-4 space-y-3">
-                {/* Nome */}
                 <input
                   className="text-lg font-semibold w-full border-b focus:outline-none"
                   value={pending.name ?? item.name}
@@ -230,8 +308,6 @@ export default function Admin() {
                     handleLocalChange(item.id, "name", e.target.value)
                   }
                 />
-
-                {/* Descrição */}
                 <textarea
                   className="text-sm text-gray-600 w-full border p-1 rounded"
                   value={pending.description ?? (item.description || "")}
@@ -240,8 +316,6 @@ export default function Admin() {
                     handleLocalChange(item.id, "description", e.target.value)
                   }
                 />
-
-                {/* Preço + Ativo */}
                 <div className="flex justify-between items-center">
                   <input
                     className="border p-1 rounded w-24"
@@ -265,8 +339,6 @@ export default function Admin() {
                     />
                   </div>
                 </div>
-
-                {/* Botões */}
                 <div className="flex justify-end gap-3">
                   {editedItems[item.id] && (
                     <Button

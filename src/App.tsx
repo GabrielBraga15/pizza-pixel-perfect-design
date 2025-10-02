@@ -9,7 +9,7 @@ import Menu from "./pages/Menu";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
-import Admin from "./pages/admin";
+import Admin from "./pages/Admin";
 import Cozinha from "./pages/Cozinha";
 
 const queryClient = new QueryClient();
