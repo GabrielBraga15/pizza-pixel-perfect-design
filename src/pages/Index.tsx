@@ -10,8 +10,8 @@ import Cadastro from "@/contexts/Cadastro";
 import Login from "@/contexts/Login";
 
 const Index = () => {
-  const [showLogin, setShowLogin] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false); // controla se o usuário está logado
+  const [showLogin, setShowLogin] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(true); // controla se o usuário está logado
 
   // Callback para quando o usuário finalizar cadastro/login
   const handleAuthSuccess = () => setLoggedIn(true);
